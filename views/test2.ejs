@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0">
+<title>taco test</title>
+
+    <!-- Google font file. If you want you can change. -->
+    <link href="https://fonts.googleapis.com/css?family=Nunito:400,600,700,900" rel="stylesheet">
+
+    <!-- Fontawesome font file css -->
+    <link rel="stylesheet" type="text/css" href="css/font-awesome.min.css">
+
+    <!-- Template global css file. Requared all pages -->
+    <link rel="stylesheet" type="text/css" href="css/global.style.css">
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.14.3/xlsx.full.min.js"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+<script>
+function excelExport(event){
+	excelExportCommon(event, handleExcelDataAll);
+}
+function excelExportCommon(event, callback){
+    var input = event.target;
+    var reader = new FileReader();
+    reader.onload = function(){
+        var fileData = reader.result;
+        var wb = XLSX.read(fileData, {type : 'binary'});
+        var sheetNameList = wb.SheetNames; // 시트 이름 목록 가져오기 
+        var firstSheetName = sheetNameList[0]; // 첫번째 시트명
+        var firstSheet = wb.Sheets[firstSheetName]; // 첫번째 시트 
+        callback(firstSheet);      
+    };
+    reader.readAsBinaryString(input.files[0]);
+}
+function handleExcelDataAll(sheet){
+	handleExcelDataHeader(sheet); // header 정보 
+	handleExcelDataHtml(sheet); // html 형태
+}
+function handleExcelDataHeader(sheet){
+    var headers = get_header_row(sheet);
+    $("#displayHeaders").html(JSON.stringify(headers));
+}
+function handleExcelDataHtml(sheet){
+    $("#displayExcelHtml").html(XLSX.utils.sheet_to_html (sheet));
+}
+function get_header_row(sheet) {
+    var headers = [];
+    var range = XLSX.utils.decode_range(sheet['!ref']);
+    var C, R = range.s.r; /* start in the first row */
+    /* walk every column in the range */
+    for(C = range.s.c; C <= range.e.c; ++C) {
+        var cell = sheet[XLSX.utils.encode_cell({c:C, r:R})] /* find the cell in the first row */
+
+        var hdr = "UNKNOWN " + C; // <-- replace with your desired default 
+        if(cell && cell.t) hdr = XLSX.utils.format_cell(cell);
+
+        headers.push(hdr);
+        
+    }
+    return headers;
+}
+</script>
+<script type="text/javascript">
+    $(document).ready(function(){
+        // 옵션추가 버튼 클릭시
+        $("#addItemBtn").click(function(){
+            // item 의 최대번호 구하기
+            var lastItemNo = $("#import_table tr:last").attr("class").replace("item", "");
+
+            var newitem = $("#import_table tr:eq(1)").clone();
+            newitem.removeClass();
+            newitem.find("td:eq(0)").attr("rowspan", "1");
+            newitem.addClass("item"+(parseInt(lastItemNo)+1));
+
+            $("#import_table").append(newitem);
+        });
+
+
+        // 항목추가 버튼 클릭시
+        $(".addBtn").live("click", function(){
+            var clickedRow = $(this).parent().parent();
+            var cls = clickedRow.attr("class");
+
+            // tr 복사해서 마지막에 추가
+            var newrow = clickedRow.clone();
+            newrow.find("td:eq(0)").remove();
+            newrow.insertAfter($("#import_table ."+cls+":last"));
+
+            // rowspan 조정
+            resizeRowspan(cls);
+        });
+         
+         
+        // 삭제버튼 클릭시
+        $(".delBtn").live("click", function(){
+            var clickedRow = $(this).parent().parent();
+            var cls = clickedRow.attr("class");
+             
+            // 각 항목의 첫번째 row를 삭제한 경우 다음 row에 td 하나를 추가해 준다.
+            if( clickedRow.find("td:eq(0)").attr("rowspan") ){
+                if( clickedRow.next().hasClass(cls) ){
+                    clickedRow.next().prepend(clickedRow.find("td:eq(0)"));
+                }
+            }
+
+            clickedRow.remove();
+
+            // rowspan 조정
+            resizeRowspan(cls);
+        });
+
+        // cls : rowspan 을 조정할 class ex) item1, item2, ...
+        function resizeRowspan(cls){
+            var rowspan = $("."+cls).length;
+            $("."+cls+":first td:eq(0)").attr("rowspan", rowspan);
+        }
+    });
+</script>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="nav-menu">
+            <nav class="menu">
+    
+                <!-- Menu navigation start -->
+                <div class="nav-container">
+                    <ul class="main-menu">
+                        <li class="">
+                            <a href="upload.html"><img src="img/content/icons/1.png" alt=""><strong>파일 업로드</strong> </a>
+                        </li>
+                        <li class="">
+                            <a href="main.html"><img src="img/content/icons/2.png" alt=""><strong>메인 메뉴</strong> </a>
+                        </li>
+                        <li class="">
+                            <a href="dataSetting.html"><img src="img/content/icons/3.png" alt=""><strong>데이터 설정</strong><span class="fa fa-angle-down"></span></a>
+                            <ul>
+                                <li><a href="dataSetting.html" data-loader="show">데이터 확인</a></li>
+                                <li><a href="dataSetting.html" data-loader="show">plot chart</a></li>
+                                <li><a href="dataSetting.html" data-loader="show">데이터 수정</a></li>
+                                <li><a href="dataSetting.html" data-loader="show">labeling</a></li>
+                            </ul>
+                        </li>
+                        <li class="">
+                            <a href="/test2"><img src="img/content/icons/5.png" alt=""><strong>Sample Test</strong> </a>
+                        </li>
+                        <li class="">
+                            <a href="ModelSetting.html"><img src="img/content/icons/4.png" alt=""><strong>모델 설정</strong> </a>
+                        </li>
+                    
+                        <li class="">
+                            <a href="history.html"><img src="img/content/icons/14.png" alt=""><strong>history</strong> </a>
+                        </li>
+    
+                        <li>
+                            <a href="javascript:void(0);"><img src="img/content/icons/9.png" alt=""><strong>Login/Register</strong> <span class="fa fa-angle-down"></span></a>
+                            <ul>
+                                <li><a href="login.html" data-loader="show">Login</a></li>
+                                <li><a href="signup.html" data-loader="show">Register</a></li>
+                                <li><a href="forgot-password.html" data-loader="show">Forgot Password</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <!-- Menu navigation end -->
+            </nav>
+        </div>
+
+        <div class="wrapper-inline">
+            <!-- Header area start -->
+            <header> <!-- extra class no-background -->
+                <a class="go-back-link" href="javascript:history.back();"><i class="fa fa-arrow-left"></i></a>
+                <h1 class="page-title">Sample Test</h1>
+                <div class="navi-menu-button">
+                    <em></em>
+                    <em></em>
+                    <em></em>
+                </div>
+            </header>
+        <!-- Header area end -->
+        <!-- Page content start -->
+    <main>
+            파일 선택 <br><input type="file" id="excelFile" onchange="excelExport(event)"/>
+            <h1>Header 정보</h1>
+            <div id="displayHeaders"></div>
+            <h1>기존 데이터</h1>
+            <table id="example" border-collapse="4px" >
+            <div id="displayExcelHtml"></div>
+            </table>
+            <div class="form-divider"></div>
+
+        <div class="form-divider"></div>
+
+        
+<table id="example" border-="1px">
+    <tr>
+        <th>TAG1</th>
+        <th>TAG2</th>
+        <th>TAG3</th>  
+        <th>TAG4</th>
+        <th>필수항목</th>
+    </tr>
+    <tr class="TAG1">
+        
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>
+        <td><input type="text" />
+        <td><input type="checkbox" /></td>
+        <td><button class="delBtn">삭제</button></td>
+    </tr>
+    <tr class="TAG2">
+        
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>
+        <td><input type="text" />
+        <td><input type="checkbox" /></td>
+        <td><button class="delBtn">삭제</button></td>
+    </tr>
+    <tr class="TAG3">
+        
+        <td><input type="text" /></td> 
+        <td><input type="text" /></td>
+        <td><input type="text" /></td>
+        <td><input type="text" />
+        <td><input type="checkbox" /></td>
+        <td><button class="delBtn">삭제</button></td>
+    </tr>
+    <button id="addItemBtn">옵션추가</button>
+</table>
+        <footer>
+            <p>Copyright © All Right Reserved</p>
+            </div>
+        </footer>
+    </main>
+
+<!--Page loader DOM Elements. Requared all pages-->
+<div class="sweet-loader">
+    <div class="box">
+        <div class="circle1"></div>
+        <div class="circle2"></div>
+        <div class="circle3"></div>
+    </div>
+</div>
+
+<!-- JQuery library file. requared all pages -->
+<script src="js/jquery-3.2.1.min.js"></script>
+<!-- Template global script file. requared all pages -->
+<script src="js/qrcode.js"> </script>
+<script src="js/global.script.js"></script>
+
+</body>
+</html>
